@@ -69,12 +69,17 @@ Users can search for books, make reservations, borrow books, and manage their wa
 
 ## ToDo
 
+Sadly I don't have more time assigned to this implementation.
+
+- Request caching mechanism
+
+- Pagination
+
 - A cronjob for the email feature or alternatively, for more complex scenarios (e.g., job persistence, retries, or distributed tasks), use packages like Agenda or even use a cloud scheduler (like AWS CloudWatch Events triggering an AWS Lambda function).
 
 - Use of @testcontainers for emulate real database interactions on tests.
 
-- Finishing implementation of MailHog/MailTrap (to test email sending locally, currently is a console log).
-  Sadly I don't have more time assigned to this test.
+- Implementation of MailHog/MailTrap (to test email sending locally, currently is a console log).
 
 ## API Endpoints
 
