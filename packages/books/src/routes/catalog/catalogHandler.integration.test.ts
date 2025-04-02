@@ -5,7 +5,7 @@ import request from 'supertest'
 import cors from 'cors'
 import { randomUUID } from 'crypto'
 import { DatabaseService } from '@book-library-tool/database'
-import type { Book } from '@book-library-tool/sdk'
+import { paginationMiddleware, type Book } from '@book-library-tool/sdk'
 import { schemas, validateQuery } from '@book-library-tool/api'
 
 // Import the catalog handler
@@ -74,6 +74,7 @@ describe('Catalog Handler Integration Tests', () => {
       .get(
         '/catalog',
         validateQuery(schemas.CatalogSearchQuerySchema),
+        paginationMiddleware(),
         catalogHandler.searchCatalog,
       )
   })
@@ -104,8 +105,8 @@ describe('Catalog Handler Integration Tests', () => {
         .set(commonHeaders)
         .expect(200)
 
-      expect(response.body).toBeInstanceOf(Array)
-      expect(response.body.length).toBe(testBooks.length)
+      expect(response.body.data).toBeInstanceOf(Array)
+      expect(response.body.data.length).toBe(testBooks.length)
     })
 
     it('should search books by title (case-insensitive)', async () => {
@@ -114,9 +115,9 @@ describe('Catalog Handler Integration Tests', () => {
         .set(commonHeaders)
         .expect(200)
 
-      expect(response.body).toBeInstanceOf(Array)
-      expect(response.body.length).toBe(2)
-      expect(response.body.map((book: Book) => book.id)).toEqual(
+      expect(response.body.data).toBeInstanceOf(Array)
+      expect(response.body.data.length).toBe(2)
+      expect(response.body.data.map((book: Book) => book.id)).toEqual(
         expect.arrayContaining(['0515125628', '1234567890']),
       )
     })
@@ -127,9 +128,9 @@ describe('Catalog Handler Integration Tests', () => {
         .set(commonHeaders)
         .expect(200)
 
-      expect(response.body).toBeInstanceOf(Array)
-      expect(response.body.length).toBe(2)
-      expect(response.body.map((book: Book) => book.author)).toEqual(
+      expect(response.body.data).toBeInstanceOf(Array)
+      expect(response.body.data.length).toBe(2)
+      expect(response.body.data.map((book: Book) => book.author)).toEqual(
         expect.arrayContaining(['Catherine Coulter', 'Catherine Johnson']),
       )
     })
@@ -140,10 +141,10 @@ describe('Catalog Handler Integration Tests', () => {
         .set(commonHeaders)
         .expect(200)
 
-      expect(response.body).toBeInstanceOf(Array)
-      expect(response.body.length).toBe(2)
+      expect(response.body.data).toBeInstanceOf(Array)
+      expect(response.body.data.length).toBe(2)
       expect(
-        response.body.every((book: Book) => book.publicationYear === 1999),
+        response.body.data.every((book: Book) => book.publicationYear === 1999),
       ).toBe(true)
     })
 
@@ -153,10 +154,10 @@ describe('Catalog Handler Integration Tests', () => {
         .set(commonHeaders)
         .expect(200)
 
-      expect(response.body).toBeInstanceOf(Array)
-      expect(response.body.length).toBe(2)
+      expect(response.body.data).toBeInstanceOf(Array)
+      expect(response.body.data.length).toBe(2)
       expect(
-        response.body.every((book: Book) => {
+        response.body.data.every((book: Book) => {
           return (
             book.title.toLowerCase().includes('target') &&
             book.publicationYear === 1999
@@ -171,8 +172,8 @@ describe('Catalog Handler Integration Tests', () => {
         .set(commonHeaders)
         .expect(200)
 
-      expect(response.body).toBeInstanceOf(Array)
-      expect(response.body.length).toBe(testBooks.length)
+      expect(response.body.data).toBeInstanceOf(Array)
+      expect(response.body.data.length).toBe(testBooks.length)
     })
 
     it('should return an empty array when no books match the criteria', async () => {
@@ -181,8 +182,8 @@ describe('Catalog Handler Integration Tests', () => {
         .set(commonHeaders)
         .expect(200)
 
-      expect(response.body).toBeInstanceOf(Array)
-      expect(response.body.length).toBe(0)
+      expect(response.body.data).toBeInstanceOf(Array)
+      expect(response.body.data.length).toBe(0)
     })
 
     it('should return 400 for invalid publicationYear parameter', async () => {
@@ -200,8 +201,8 @@ describe('Catalog Handler Integration Tests', () => {
         .set(commonHeaders)
         .expect(200)
 
-      expect(response.body).toBeInstanceOf(Array)
-      expect(response.body.length).toBe(2)
+      expect(response.body.data).toBeInstanceOf(Array)
+      expect(response.body.data.length).toBe(2)
     })
 
     it('should handle partial matches in titles', async () => {
@@ -210,9 +211,9 @@ describe('Catalog Handler Integration Tests', () => {
         .set(commonHeaders)
         .expect(200)
 
-      expect(response.body).toBeInstanceOf(Array)
-      expect(response.body.length).toBe(1)
-      expect(response.body[0].title).toBe('The Evolution Man')
+      expect(response.body.data).toBeInstanceOf(Array)
+      expect(response.body.data.length).toBe(1)
+      expect(response.body.data[0].title).toBe('The Evolution Man')
     })
 
     it('should handle partial matches in author names', async () => {
@@ -221,9 +222,9 @@ describe('Catalog Handler Integration Tests', () => {
         .set(commonHeaders)
         .expect(200)
 
-      expect(response.body).toBeInstanceOf(Array)
-      expect(response.body.length).toBe(1)
-      expect(response.body[0].author).toBe('Roy Lewis')
+      expect(response.body.data).toBeInstanceOf(Array)
+      expect(response.body.data.length).toBe(1)
+      expect(response.body.data[0].author).toBe('Roy Lewis')
     })
 
     it('should reject invalid query parameters according to schema', async () => {

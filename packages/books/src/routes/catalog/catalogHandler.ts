@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express'
-import { DatabaseService } from '@book-library-tool/database'
+import { DatabaseService, getPaginatedData } from '@book-library-tool/database'
 import { Book, CatalogSearchQuery } from '@book-library-tool/sdk'
 
 export const catalogHandler = {
@@ -33,26 +33,20 @@ export const catalogHandler = {
       }
 
       if (publicationYear) {
-        const year = Number(publicationYear)
-
-        if (!isNaN(year)) {
-          filter.publicationYear = year
-        } else {
-          res
-            .status(400)
-            .json({ message: 'Invalid publicationYear parameter.' })
-          return
-        }
+        filter.publicationYear = Number(publicationYear)
       }
 
       const booksCollection = DatabaseService.getCollection<Book>('books')
 
-      // Find the books that match the filter, excluding _id
-      const books = await booksCollection
-        .find(filter, { projection: { _id: 0 } })
-        .toArray()
+      // Use the pagination helper to get paginated books data
+      const paginatedBooks = await getPaginatedData<Book>(
+        booksCollection,
+        filter,
+        req,
+        { projection: { _id: 0 } },
+      )
 
-      res.status(200).json(books)
+      res.status(200).json(paginatedBooks)
     } catch (error) {
       next(error)
     }

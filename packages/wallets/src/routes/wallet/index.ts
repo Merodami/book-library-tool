@@ -12,7 +12,7 @@ export default Router()
   .post(
     '/:userId/balance',
     validateParams(schemas.UserIdSchema),
-    validateBody(schemas.BalanceWalletRequestSchema),
+    validateBody(schemas.WalletBalanceRequestSchema),
     walletHandler.updateWalletBalance,
   )
   .patch(
