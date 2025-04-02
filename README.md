@@ -34,7 +34,7 @@ Users can search for books, make reservations, borrow books, and manage their wa
 ### Wallet & Fees
 
 - Each user has a wallet to pay for reservations and late fees.
-- A late fee of **€0.20/day** applies for overdue books. (See [env](./.env.local)) LATE_FEE_PER_DAY)
+- A late fee of **€0.20/day** applies for overdue books. (See [env](./.env.local) variable LATE_FEE_PER_DAY)
 - If late fees reach the retail price of the book, the user effectively buys it.
 
 ## Contents
@@ -63,8 +63,7 @@ Users can search for books, make reservations, borrow books, and manage their wa
     - [Auth configuration](#auth-configuration)
     - [Git hooks](#git-hooks)
     - [Testing](#testing)
-      - [Automated tests](#automated-tests)
-      - [Email test](#email-test)
+      - [Unit tests](#unit-tests)
   - [Troubleshooting](#troubleshooting)
     - [Ports already in use](#ports-already-in-use)
 
@@ -73,6 +72,9 @@ Users can search for books, make reservations, borrow books, and manage their wa
 - A cronjob for the email feature or alternatively, for more complex scenarios (e.g., job persistence, retries, or distributed tasks), use packages like Agenda or even use a cloud scheduler (like AWS CloudWatch Events triggering an AWS Lambda function).
 
 - Use of @testcontainers for emulate real database interactions on tests.
+
+- Finishing implementation of MailHog/MailTrap (to test email sending locally, currently is a console log).
+  Sadly I don't have more time assigned to this test.
 
 ## API Endpoints
 
@@ -284,7 +286,7 @@ auto-fixable issues and commits the changes.
 
 ### Testing
 
-#### Automated tests
+#### Unit tests
 
 Unit tests can be run with the following commands:
 
@@ -293,49 +295,6 @@ yarn test
 ```
 
 Note, `--watch` is optional. All use vitest.
-
-#### Email test
-
-To test the emails locally is required to
-
-- Enable local mail trap variable
-- Install Mailhog
-
-**Enable local mail trap variable**
-
-The environment variable `MAIL_TRAP` should be set to `true` in the `.env` file
-
-```env filename=.env
-MAIL_TRAP=true
-```
-
-And if is required, to change the local mail server address and port, we can use the environment variables
-
-```env filename=.env
-MAIL_TRAP_HOST=localhost
-MAIL_TRAP_PORT=1025
-```
-
-**Install Mailhog**
-
-- MacOS
-
-```sh
-brew update && brew install mailhog
-mailhog
-```
-
-- Debian / Ubuntu Go < v1.18
-
-```sh
-sudo apt-get -y install golang-go
-~/go/bin/MailHog
-```
-
-**Access local Mailhog server**
-
-On the browser, navigate to
-http://0.0.0.0:8025/
 
 ## Troubleshooting
 
