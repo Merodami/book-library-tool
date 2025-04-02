@@ -190,7 +190,7 @@ yarn
 
 ```
 
-Generate API schemas, docs and types
+Generate API schemas, docs and types (This is only executed this time or when schema changes)
 
 ```sh
 yarn generate:api && yarn generate:sdk

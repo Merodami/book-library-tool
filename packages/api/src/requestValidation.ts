@@ -8,7 +8,7 @@ import { formatApiErrors } from './util/formatApiError.js'
 const addFormats = _addFormats as unknown as typeof _addFormats.default
 
 // Initialize Ajv with all errors enabled.
-const ajv = new Ajv({ allErrors: true })
+const ajv = new Ajv({ allErrors: true, coerceTypes: true })
 addFormats(ajv)
 
 /**

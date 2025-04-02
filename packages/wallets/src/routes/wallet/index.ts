@@ -4,7 +4,11 @@ import { validateBody, validateParams } from '@book-library-tool/api'
 import { schemas } from '@book-library-tool/api'
 
 export default Router()
-  .get('/:userId', walletHandler.getWallet)
+  .get(
+    '/:userId',
+    validateParams(schemas.UserIdSchema),
+    walletHandler.getWallet,
+  )
   .post(
     '/:userId/balance',
     validateParams(schemas.UserIdSchema),
