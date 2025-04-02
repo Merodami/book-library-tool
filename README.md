@@ -193,7 +193,7 @@ yarn
 Generate API schemas, docs and types
 
 ```sh
-yarn yarn generate:api && generate:sdk
+yarn generate:api && yarn generate:sdk
 ```
 
 Build the project
