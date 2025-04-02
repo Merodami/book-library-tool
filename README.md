@@ -202,12 +202,6 @@ Build the project
 yarn build
 ```
 
-Seed the database with all the books from books_sample_technical_challenge.csv
-
-```sh
-yarn database:seed
-```
-
 Create a user and token (routes are protected by token)
 Remember to store the userId and token for later use on API
 
@@ -221,6 +215,12 @@ that sets initial database schema
 
 ```sh
 yarn docker:local
+```
+
+Seed the database with all the books from books_sample_technical_challenge.csv
+
+```sh
+yarn database:seed
 ```
 
 Finally this command executes all services/modules in watch mode.
