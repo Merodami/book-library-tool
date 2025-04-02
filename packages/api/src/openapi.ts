@@ -24,7 +24,118 @@ export const OpenAPISpec = {
       'API for managing book references, catalog search, reservations, and wallets.',
   },
   paths: {
+    '/catalog': {
+      servers: [
+        {
+          url: 'http://localhost:3001',
+          description: 'Books Service',
+        },
+      ],
+      get: {
+        summary: 'Search for books in the catalog',
+        description:
+          'Allows searching for books by title, author, or publicationYear.',
+        parameters: [
+          {
+            in: 'query',
+            name: 'title',
+            description: 'Partial or full title (case-insensitive)',
+            required: false,
+            schema: { type: 'string' },
+            examples: {
+              titleExample: {
+                summary: 'Search by title',
+                value: 'target',
+              },
+            },
+          },
+          {
+            in: 'query',
+            name: 'author',
+            description: 'Partial or full author name (case-insensitive)',
+            required: false,
+            schema: { type: 'string' },
+            examples: {
+              authorExample: {
+                summary: 'Search by author',
+                value: 'coulter',
+              },
+            },
+          },
+          {
+            in: 'query',
+            name: 'publicationYear',
+            description: 'Exact publication year',
+            required: false,
+            schema: { type: 'integer' },
+            examples: {
+              yearExample: {
+                summary: 'Search by publication year',
+                value: 1999,
+              },
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'A list of books matching the search criteria',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: { $ref: '#/components/schemas/Book' },
+                },
+                examples: {
+                  searchResults: {
+                    summary: 'Example search results',
+                    value: [
+                      {
+                        id: '0515125628',
+                        title: 'The Target',
+                        author: 'Catherine Coulter',
+                        publicationYear: 1999,
+                        publisher: 'Jove Books',
+                        price: 27,
+                        createdAt: '2025-04-01T19:10:25.821Z',
+                        updatedAt: '2025-04-01T19:10:25.821Z',
+                      },
+                    ],
+                  },
+                  emptyResults: {
+                    summary: 'No results found',
+                    value: [],
+                  },
+                },
+              },
+            },
+          },
+          '400': {
+            description: 'Bad Request',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
+                examples: {
+                  invalidYear: {
+                    summary: 'Invalid publication year',
+                    value: {
+                      message: 'Invalid publicationYear parameter.',
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        security: [{ ApiTokenAuth: [] }],
+      },
+    },
     '/books': {
+      servers: [
+        {
+          url: 'http://localhost:3001',
+          description: 'Books Service',
+        },
+      ],
       post: {
         summary: 'Add a new book reference',
         requestBody: {
@@ -88,8 +199,6 @@ export const OpenAPISpec = {
                       publicationYear: 1993,
                       publisher: 'Random House Inc',
                       price: 19,
-                      createdAt: '2025-04-01T19:10:25.821Z',
-                      updatedAt: '2025-04-01T19:10:25.821Z',
                     },
                   },
                 },
@@ -118,6 +227,12 @@ export const OpenAPISpec = {
       },
     },
     '/books/{id}': {
+      servers: [
+        {
+          url: 'http://localhost:3001',
+          description: 'Books Service',
+        },
+      ],
       get: {
         summary: 'Get book by reference id',
         parameters: [
@@ -129,7 +244,7 @@ export const OpenAPISpec = {
             schema: { $ref: '#/components/schemas/BookId' },
             examples: {
               bookId1: {
-                summary: 'Book ISBN example',
+                summary: 'Book reference example',
                 value: '0515125628',
               },
             },
@@ -154,25 +269,22 @@ export const OpenAPISpec = {
                       publicationYear: 1999,
                       publisher: 'Jove Books',
                       price: 27,
-                      createdAt: '2025-04-01T19:10:25.821Z',
-                      updatedAt: '2025-04-01T19:10:25.821Z',
                     },
                   },
                 },
               },
             },
           },
-          '400': {
+          '404': {
             description: 'Bad Request',
             content: {
               'application/json': {
                 schema: { $ref: '#/components/schemas/ErrorResponse' },
                 examples: {
-                  invalidId: {
-                    summary: 'Invalid book ID',
+                  bookNotFound: {
+                    summary: 'Book not found',
                     value: {
-                      error: 'ValidationError',
-                      message: ['id must be string'],
+                      message: 'Book not found.',
                     },
                   },
                 },
@@ -251,6 +363,12 @@ export const OpenAPISpec = {
       },
     },
     '/reservations': {
+      servers: [
+        {
+          url: 'http://localhost:3001',
+          description: 'Books Service',
+        },
+      ],
       post: {
         summary: 'Create a new reservation',
         requestBody: {
@@ -263,7 +381,7 @@ export const OpenAPISpec = {
                   summary: 'New reservation request',
                   value: {
                     userId: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
-                    referenceId: '1',
+                    referenceId: '0515125628',
                   },
                 },
               },
@@ -299,29 +417,31 @@ export const OpenAPISpec = {
               'application/json': {
                 schema: { $ref: '#/components/schemas/ErrorResponse' },
                 examples: {
+                  reservationExists: {
+                    summary: 'Active reservation exists',
+                    value: {
+                      message:
+                        'User already has an active reservation for this book reference.',
+                    },
+                  },
                   bookNotAvailable: {
                     summary: 'No copies available',
                     value: {
-                      error: 'ValidationError',
-                      message: ['No copies available for this book reference'],
+                      message: 'No copies available for this book reference.',
                     },
                   },
                   userMaxBooks: {
                     summary: 'User has maximum books',
                     value: {
-                      error: 'ValidationError',
-                      message: [
-                        'User cannot borrow more than 3 books at the same time',
-                      ],
+                      message:
+                        'User cannot borrow more than 3 books at the same time.',
                     },
                   },
                   insufficientBalance: {
                     summary: 'Insufficient wallet balance',
                     value: {
-                      error: 'ValidationError',
-                      message: [
-                        'User does not have enough balance to reserve a book',
-                      ],
+                      message:
+                        'User does not have enough balance to reserve a book.',
                     },
                   },
                 },
@@ -333,6 +453,12 @@ export const OpenAPISpec = {
       },
     },
     '/reservations/user/{userId}': {
+      servers: [
+        {
+          url: 'http://localhost:3001',
+          description: 'Books Service',
+        },
+      ],
       get: {
         summary: 'Get reservation history for a user',
         parameters: [
@@ -395,10 +521,10 @@ export const OpenAPISpec = {
                 schema: { $ref: '#/components/schemas/ErrorResponse' },
                 examples: {
                   invalidUserId: {
-                    summary: 'Invalid user ID format',
+                    summary: 'userId must match format \"uuid\"',
                     value: {
                       error: 'ValidationError',
-                      message: ['userId must be a valid UUID'],
+                      message: ['userId must match format \"uuid\"'],
                     },
                   },
                 },
@@ -410,6 +536,12 @@ export const OpenAPISpec = {
       },
     },
     '/reservations/{reservationId}/return': {
+      servers: [
+        {
+          url: 'http://localhost:3001',
+          description: 'Books Service',
+        },
+      ],
       patch: {
         summary: 'Mark a reservation as returned',
         parameters: [
@@ -477,7 +609,7 @@ export const OpenAPISpec = {
                     summary: 'Invalid reservation ID',
                     value: {
                       error: 'ValidationError',
-                      message: ['reservationId is required'],
+                      message: ['reservationId must match format \"uuid\"'],
                     },
                   },
                 },
@@ -493,7 +625,6 @@ export const OpenAPISpec = {
                   reservationNotFound: {
                     summary: 'Reservation not found',
                     value: {
-                      error: 'ValidationError',
                       message: ['Active reservation not found'],
                     },
                   },
@@ -506,6 +637,12 @@ export const OpenAPISpec = {
       },
     },
     '/wallets/{userId}': {
+      servers: [
+        {
+          url: 'http://localhost:3002',
+          description: 'Wallet Service',
+        },
+      ],
       get: {
         summary: 'Retrieve a user wallet',
         parameters: [
@@ -535,8 +672,6 @@ export const OpenAPISpec = {
                     value: {
                       userId: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
                       balance: 50.5,
-                      createdAt: '2025-01-15T08:30:00.000Z',
-                      updatedAt: '2025-04-01T14:45:20.123Z',
                     },
                   },
                 },
@@ -550,9 +685,10 @@ export const OpenAPISpec = {
                 schema: { $ref: '#/components/schemas/ErrorResponse' },
                 examples: {
                   invalidUserId: {
-                    summary: 'Invalid user ID format',
+                    summary: 'User not found',
                     value: {
-                      message: 'Invalid user ID format.',
+                      error: 'ValidationError',
+                      message: ['userId must match format \"uuid\".'],
                     },
                   },
                 },
@@ -581,6 +717,12 @@ export const OpenAPISpec = {
       },
     },
     '/wallets/{userId}/balance': {
+      servers: [
+        {
+          url: 'http://localhost:3002',
+          description: 'Wallet Service',
+        },
+      ],
       post: {
         summary: 'Modify balance of a user wallet',
         parameters: [
@@ -631,9 +773,7 @@ export const OpenAPISpec = {
                     summary: 'Updated wallet balance',
                     value: {
                       userId: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
-                      balance: 67.5,
-                      createdAt: '2025-01-15T08:30:00.000Z',
-                      updatedAt: '2025-04-01T15:20:30.456Z',
+                      balance: 20,
                     },
                   },
                 },
@@ -646,13 +786,6 @@ export const OpenAPISpec = {
               'application/json': {
                 schema: { $ref: '#/components/schemas/ErrorResponse' },
                 examples: {
-                  insufficientFunds: {
-                    summary: 'Insufficient funds',
-                    value: {
-                      error: 'ValidationError',
-                      message: ['Insufficient funds in wallet'],
-                    },
-                  },
                   invalidAmount: {
                     summary: 'Invalid amount',
                     value: {
@@ -669,6 +802,7 @@ export const OpenAPISpec = {
       },
     },
     '/wallets/{userId}/late-return': {
+      'x-swagger-hidden': true,
       patch: {
         summary: 'Apply a late fee to a user wallet',
         parameters: [
@@ -797,10 +931,10 @@ export const OpenAPISpec = {
     },
     securitySchemes: {
       ApiTokenAuth: {
-        type: 'apiKey',
-        in: 'header',
-        name: 'Authorization',
-        description: 'API token authentication. Use "Bearer <token>"',
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        description: 'Enter your JWT token for authentication',
       },
     },
   },

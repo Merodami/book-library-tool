@@ -84,7 +84,7 @@ API docs on browser running this command
 yarn api:docs
 ```
 
-You will find request on the API docs.
+On the API docs you will find schema description, examples and a execution UI.
 
 > **Note**: If API token authentication is enabled, include `Authorization: Bearer <token>` in the request header.
 
@@ -95,11 +95,11 @@ You will find request on the API docs.
 
   - Required body fields: `id`, `title`, `author`, `publicationYear`, `publisher`
 
-- **GET** `/books/{id}`  
-  Retrieves a book reference by its `id`.
+- **GET** `/books/{referenceId}`  
+  Retrieves a book reference by its `referenceId`.
 
-- **DELETE** `/books/{id}`  
-  Deletes a book reference by its `id`.
+- **DELETE** `/books/{referenceId}`  
+  Deletes a book reference by its `referenceId`.
 
 ### Reservations
 
@@ -202,13 +202,6 @@ Build the project
 yarn build
 ```
 
-Create a user and token (routes are protected by token)
-Remember to store the userId and token for later use on API
-
-```sh
-yarn user:create foo@email.com
-```
-
 Now we need to create the docker instance of MongoDB
 This will also automatically execute the initial migration (packages/database/mongo/init-mongo.js)
 that sets initial database schema
@@ -223,10 +216,23 @@ Seed the database with all the books from books_sample_technical_challenge.csv
 yarn database:seed
 ```
 
+Create a user and token (routes are protected by token)
+Remember to store the userId and token for later use on API
+
+```sh
+yarn user:create foo@email.com
+```
+
 Finally this command executes all services/modules in watch mode.
 
 ```sh
 yarn local
+```
+
+To see the API Documentation & Test interface
+
+```sh
+yarn api:docs
 ```
 
 Now you should be able to make requests to the services (Token required)
@@ -236,11 +242,7 @@ localhost:3001 > Books service
 localhost:3002 > Wallet service
 ```
 
-To see the API Documentation (Examples on [API Docs](#api-endpoints))
-
-```sh
-yarn api:docs
-```
+**_[All the API can be tested directly on the API Docs in Swagger](#api-endpoints)_**
 
 #### For development
 
