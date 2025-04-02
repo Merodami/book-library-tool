@@ -206,7 +206,7 @@ Create a user and token (routes are protected by token)
 Remember to store the userId and token for later use on API
 
 ```sh
-yarn create:user foo@email.com
+yarn user:create foo@email.com
 ```
 
 Now we need to create the docker instance of MongoDB
