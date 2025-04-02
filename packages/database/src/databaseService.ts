@@ -1,3 +1,4 @@
+import { PaginatedResponse, PaginationParams } from '@book-library-tool/types'
 import {
   MongoClient,
   Db,
@@ -136,6 +137,7 @@ export class DatabaseService {
     if (Object.keys(update).some((key) => key.startsWith('$'))) {
       // It's an atomic update; use it as is and merge in updatedAt
       updateFilter = { ...update } as UpdateFilter<T>
+
       if (updateFilter.$set) {
         ;(updateFilter.$set as any).updatedAt = now
       } else {
@@ -147,6 +149,55 @@ export class DatabaseService {
     }
 
     return collection.updateOne(filter, updateFilter, options)
+  }
+
+  /**
+   * Generic pagination method for any collection
+   */
+  static async paginateCollection<T extends Document = Document>(
+    collection: Collection<T>,
+    query: Filter<T>,
+    pagination: PaginationParams,
+    options?: {
+      projection?: Record<string, number>
+      sort?: Record<string, 1 | -1>
+    },
+  ): Promise<PaginatedResponse<WithId<T>>> {
+    const { page: possiblePage, limit: possibleLimit } = pagination
+
+    const limit = possibleLimit ?? Number(process.env.PAGINATION_DEFAULT_LIMIT)
+    const page = possiblePage ?? 1
+    const totalItems = await collection.countDocuments(query)
+
+    const totalPages = Math.ceil(totalItems / limit)
+
+    const cursor = collection
+      .find(query, {
+        projection: {
+          _id: 0,
+          createdAt: 0,
+          updatedAt: 0,
+          ...options?.projection,
+        },
+      })
+      .sort(options?.sort || {})
+      .skip((page - 1) * limit)
+      .limit(limit)
+
+    const rawData = await cursor.toArray()
+    const data = rawData.map(({ _id, ...rest }) => rest as WithId<T>)
+
+    return {
+      data,
+      pagination: {
+        page,
+        limit,
+        total: totalItems,
+        pages: totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
+      },
+    }
   }
 
   /**

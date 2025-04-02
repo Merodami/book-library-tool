@@ -51,7 +51,7 @@ describe('Wallet Handler Integration Tests', () => {
       .post(
         '/wallets/:userId/balance',
         validateParams(schemas.UserIdSchema),
-        validateBody(schemas.BalanceWalletRequestSchema),
+        validateBody(schemas.WalletBalanceRequestSchema),
         walletHandler.updateWalletBalance,
       )
       .patch(

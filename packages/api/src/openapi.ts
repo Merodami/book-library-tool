@@ -1,19 +1,34 @@
 import { OpenAPIV3 } from 'openapi-types'
 import {
-  UserIdSchema,
   BookSchema,
+  BookIdSchema,
   BookRequestSchema,
   CatalogSearchQuerySchema,
   ReservationRequestSchema,
   ReservationSchema,
   ReservationReturnParamsSchema,
+  ReservationReturnResponseSchema,
   WalletSchema,
-  ErrorResponseSchema,
-  BalanceWalletRequestSchema,
+  WalletBalanceRequestSchema,
   LateReturnRequestSchema,
-  BookIdSchema,
   UserSchema,
+  UserIdSchema,
+  PaginatedBookResponseSchema,
+  PaginatedReservationResponseSchema,
+  PaginatedUserResponseSchema,
+  ErrorResponseSchema,
+  ReservationsHistoryQuerySchema,
 } from './schemas/index.js'
+import {
+  paramPaginationLimit,
+  paramPaginationPage,
+  paramCatalogAuthor,
+  paramCatalogPublicationYear,
+  paramCatalogTitle,
+  paramUserId,
+  paramBookId,
+  paramReservationId,
+} from './parameters/index.js'
 
 export const OpenAPISpec = {
   openapi: '3.0.0',
@@ -34,76 +49,60 @@ export const OpenAPISpec = {
       get: {
         summary: 'Search for books in the catalog',
         description:
-          'Allows searching for books by title, author, or publicationYear.',
+          'Allows searching for books by title, author, or publicationYear with pagination support.',
         parameters: [
-          {
-            in: 'query',
-            name: 'title',
-            description: 'Partial or full title (case-insensitive)',
-            required: false,
-            schema: { type: 'string' },
-            examples: {
-              titleExample: {
-                summary: 'Search by title',
-                value: 'target',
-              },
-            },
-          },
-          {
-            in: 'query',
-            name: 'author',
-            description: 'Partial or full author name (case-insensitive)',
-            required: false,
-            schema: { type: 'string' },
-            examples: {
-              authorExample: {
-                summary: 'Search by author',
-                value: 'coulter',
-              },
-            },
-          },
-          {
-            in: 'query',
-            name: 'publicationYear',
-            description: 'Exact publication year',
-            required: false,
-            schema: { type: 'integer' },
-            examples: {
-              yearExample: {
-                summary: 'Search by publication year',
-                value: 1999,
-              },
-            },
-          },
+          paramCatalogTitle,
+          paramCatalogAuthor,
+          paramCatalogPublicationYear,
+          paramPaginationPage,
+          paramPaginationLimit,
         ],
         responses: {
           '200': {
-            description: 'A list of books matching the search criteria',
+            description:
+              'A paginated list of books matching the search criteria',
             content: {
               'application/json': {
-                schema: {
-                  type: 'array',
-                  items: { $ref: '#/components/schemas/Book' },
-                },
+                schema: { $ref: '#/components/schemas/PaginatedBookResponse' },
                 examples: {
-                  searchResults: {
-                    summary: 'Example search results',
-                    value: [
-                      {
-                        id: '0515125628',
-                        title: 'The Target',
-                        author: 'Catherine Coulter',
-                        publicationYear: 1999,
-                        publisher: 'Jove Books',
-                        price: 27,
-                        createdAt: '2025-04-01T19:10:25.821Z',
-                        updatedAt: '2025-04-01T19:10:25.821Z',
+                  paginatedBooks: {
+                    summary: 'Example paginated book results',
+                    value: {
+                      data: [
+                        {
+                          id: '0515125628',
+                          title: 'The Target',
+                          author: 'Catherine Coulter',
+                          publicationYear: 1999,
+                          publisher: 'Jove Books',
+                          price: 27,
+                          createdAt: '2025-04-01T19:10:25.821Z',
+                          updatedAt: '2025-04-01T19:10:25.821Z',
+                        },
+                      ],
+                      pagination: {
+                        total: 25,
+                        page: 1,
+                        limit: 10,
+                        pages: 3,
+                        hasNext: true,
+                        hasPrev: false,
                       },
-                    ],
+                    },
                   },
                   emptyResults: {
                     summary: 'No results found',
-                    value: [],
+                    value: {
+                      data: [],
+                      pagination: {
+                        total: 0,
+                        page: 1,
+                        limit: 10,
+                        pages: 0,
+                        hasNext: false,
+                        hasPrev: false,
+                      },
+                    },
                   },
                 },
               },
@@ -118,7 +117,18 @@ export const OpenAPISpec = {
                   invalidYear: {
                     summary: 'Invalid publication year',
                     value: {
+                      error: 'ValidationError',
                       message: 'Invalid publicationYear parameter.',
+                    },
+                  },
+                  invalidPagination: {
+                    summary: 'Invalid pagination parameters',
+                    value: {
+                      error: 'ValidationError',
+                      message: [
+                        'page must be a positive integer',
+                        'limit must not exceed 100',
+                      ],
                     },
                   },
                 },
@@ -235,30 +245,13 @@ export const OpenAPISpec = {
       ],
       get: {
         summary: 'Get book by reference id',
-        parameters: [
-          {
-            in: 'path',
-            name: 'id',
-            description: 'The identifier of the book to retrieve',
-            required: true,
-            schema: { $ref: '#/components/schemas/BookId' },
-            examples: {
-              bookId1: {
-                summary: 'Book reference example',
-                value: '0515125628',
-              },
-            },
-          },
-        ],
+        parameters: [paramBookId],
         responses: {
           '200': {
             description: 'Book found',
             content: {
               'application/json': {
-                schema: {
-                  type: 'array',
-                  items: { $ref: '#/components/schemas/Book' },
-                },
+                schema: { $ref: '#/components/schemas/Book' },
                 examples: {
                   bookFound: {
                     summary: 'Book found successfully',
@@ -276,7 +269,7 @@ export const OpenAPISpec = {
             },
           },
           '404': {
-            description: 'Bad Request',
+            description: 'Book not found',
             content: {
               'application/json': {
                 schema: { $ref: '#/components/schemas/ErrorResponse' },
@@ -284,6 +277,7 @@ export const OpenAPISpec = {
                   bookNotFound: {
                     summary: 'Book not found',
                     value: {
+                      error: 'ValidationError',
                       message: 'Book not found.',
                     },
                   },
@@ -296,21 +290,7 @@ export const OpenAPISpec = {
       },
       delete: {
         summary: 'Delete a book reference by id',
-        parameters: [
-          {
-            in: 'path',
-            name: 'id',
-            description: 'The identifier of the book to delete',
-            required: true,
-            schema: { $ref: '#/components/schemas/BookId' },
-            examples: {
-              bookId1: {
-                summary: 'Book ISBN example',
-                value: '0515125628',
-              },
-            },
-          },
-        ],
+        parameters: [paramBookId],
         responses: {
           '200': {
             description: 'Book reference deleted successfully',
@@ -461,54 +441,49 @@ export const OpenAPISpec = {
       ],
       get: {
         summary: 'Get reservation history for a user',
-        parameters: [
-          {
-            in: 'path',
-            name: 'userId',
-            description: 'User identifier (UUID)',
-            required: true,
-            schema: { type: 'string', format: 'uuid' },
-            examples: {
-              userId1: {
-                summary: 'Example user ID',
-                value: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
-              },
-            },
-          },
-        ],
+        parameters: [paramUserId, paramPaginationPage, paramPaginationLimit],
         responses: {
           '200': {
-            description: 'Reservation history for the user',
+            description: 'Paginated reservation history for the user',
             content: {
               'application/json': {
                 schema: {
-                  type: 'array',
-                  items: { $ref: '#/components/schemas/Reservation' },
+                  $ref: '#/components/schemas/PaginatedReservationResponse',
                 },
                 examples: {
                   userReservations: {
                     summary: 'User reservation history',
-                    value: [
-                      {
-                        reservationId: 'f7e6d5c4-b3a2-1098-7654-321fedcba012',
-                        userId: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
-                        referenceId: '0515125628',
-                        reservedAt: '2025-04-01T12:30:45.678Z',
-                        dueDate: '2025-04-06T12:30:45.678Z',
-                        status: 'reserved',
-                        feeCharged: 3,
+                    value: {
+                      data: [
+                        {
+                          reservationId: 'f7e6d5c4-b3a2-1098-7654-321fedcba012',
+                          userId: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+                          referenceId: '0515125628',
+                          reservedAt: '2025-04-01T12:30:45.678Z',
+                          dueDate: '2025-04-06T12:30:45.678Z',
+                          status: 'reserved',
+                          feeCharged: 3,
+                        },
+                        {
+                          reservationId: '11223344-5566-7788-99aa-bbccddeeff00',
+                          userId: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+                          referenceId: '0679427279',
+                          reservedAt: '2025-03-15T09:20:33.456Z',
+                          dueDate: '2025-03-20T09:20:33.456Z',
+                          status: 'returned',
+                          feeCharged: 3,
+                          updatedAt: '2025-03-19T14:25:10.789Z',
+                        },
+                      ],
+                      pagination: {
+                        total: 5,
+                        page: 1,
+                        limit: 10,
+                        pages: 1,
+                        hasNext: false,
+                        hasPrev: false,
                       },
-                      {
-                        reservationId: '11223344-5566-7788-99aa-bbccddeeff00',
-                        userId: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
-                        referenceId: '0679427279',
-                        reservedAt: '2025-03-15T09:20:33.456Z',
-                        dueDate: '2025-03-20T09:20:33.456Z',
-                        status: 'returned',
-                        feeCharged: 3,
-                        updatedAt: '2025-03-19T14:25:10.789Z',
-                      },
-                    ],
+                    },
                   },
                 },
               },
@@ -525,6 +500,16 @@ export const OpenAPISpec = {
                     value: {
                       error: 'ValidationError',
                       message: ['userId must match format \"uuid\"'],
+                    },
+                  },
+                  invalidPagination: {
+                    summary: 'Invalid pagination parameters',
+                    value: {
+                      error: 'ValidationError',
+                      message: [
+                        'page must be a positive integer',
+                        'limit must not exceed 100',
+                      ],
                     },
                   },
                 },
@@ -544,31 +529,14 @@ export const OpenAPISpec = {
       ],
       patch: {
         summary: 'Mark a reservation as returned',
-        parameters: [
-          {
-            in: 'path',
-            name: 'reservationId',
-            description: 'Reservation identifier (UUID)',
-            required: true,
-            schema: { $ref: '#/components/schemas/ReservationReturnParams' },
-            examples: {
-              reservationId1: {
-                summary: 'Example reservation ID',
-                value: 'f7e6d5c4-b3a2-1098-7654-321fedcba012',
-              },
-            },
-          },
-        ],
+        parameters: [paramReservationId],
         responses: {
           '200': {
             description: 'Reservation marked as returned',
             content: {
               'application/json': {
                 schema: {
-                  type: 'object',
-                  properties: {
-                    message: { type: 'string' },
-                  },
+                  $ref: '#/components/schemas/ReservationReturnResponse',
                 },
                 examples: {
                   onTimeReturn: {
@@ -625,6 +593,7 @@ export const OpenAPISpec = {
                   reservationNotFound: {
                     summary: 'Reservation not found',
                     value: {
+                      error: 'ValidationError',
                       message: ['Active reservation not found'],
                     },
                   },
@@ -645,21 +614,7 @@ export const OpenAPISpec = {
       ],
       get: {
         summary: 'Retrieve a user wallet',
-        parameters: [
-          {
-            in: 'path',
-            name: 'userId',
-            description: 'User identifier (UUID)',
-            required: true,
-            schema: { type: 'string', format: 'uuid' },
-            examples: {
-              userId1: {
-                summary: 'Example user ID',
-                value: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
-              },
-            },
-          },
-        ],
+        parameters: [paramUserId],
         responses: {
           '200': {
             description: 'User wallet details',
@@ -725,21 +680,7 @@ export const OpenAPISpec = {
       ],
       post: {
         summary: 'Modify balance of a user wallet',
-        parameters: [
-          {
-            in: 'path',
-            name: 'userId',
-            description: 'User identifier (UUID)',
-            required: true,
-            schema: { type: 'string', format: 'uuid' },
-            examples: {
-              userId1: {
-                summary: 'Example user ID',
-                value: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
-              },
-            },
-          },
-        ],
+        parameters: [paramUserId],
         requestBody: {
           required: true,
           content: {
@@ -802,23 +743,15 @@ export const OpenAPISpec = {
       },
     },
     '/wallets/{userId}/late-return': {
+      servers: [
+        {
+          url: 'http://localhost:3002',
+          description: 'Wallet Service',
+        },
+      ],
       patch: {
         summary: 'Apply a late fee to a user wallet',
-        parameters: [
-          {
-            in: 'path',
-            name: 'userId',
-            description: 'User identifier (UUID)',
-            required: true,
-            schema: { type: 'string', format: 'uuid' },
-            examples: {
-              userId1: {
-                summary: 'Example user ID',
-                value: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
-              },
-            },
-          },
-        ],
+        parameters: [paramUserId],
         requestBody: {
           required: true,
           content: {
@@ -914,19 +847,39 @@ export const OpenAPISpec = {
   },
   components: {
     schemas: {
+      // Use the schemas defined in your TypeBox files
       UserId: UserIdSchema,
       Book: BookSchema,
       BookId: BookIdSchema,
       BookRequest: BookRequestSchema,
-      CatalogSearchQuery: CatalogSearchQuerySchema,
-      ReservationRequest: ReservationRequestSchema,
       Reservation: ReservationSchema,
+      ReservationRequest: ReservationRequestSchema,
+      ReservationReturnResponse: ReservationReturnResponseSchema,
+      ReservationsHistoryQuery: ReservationsHistoryQuerySchema,
       ReservationReturnParams: ReservationReturnParamsSchema,
       Wallet: WalletSchema,
       ErrorResponse: ErrorResponseSchema,
-      BalanceWalletRequest: BalanceWalletRequestSchema,
+      BalanceWalletRequest: WalletBalanceRequestSchema,
       LateReturnRequest: LateReturnRequestSchema,
       User: UserSchema,
+
+      // Pagination schemas
+      PaginatedBookResponse: PaginatedBookResponseSchema,
+      PaginatedReservationResponse: PaginatedReservationResponseSchema,
+      PaginatedUserResponse: PaginatedUserResponseSchema,
+
+      // Query schemas
+      CatalogSearchQuery: CatalogSearchQuerySchema,
+    },
+    parameters: {
+      paramPaginationLimit,
+      paramPaginationPage,
+      paramCatalogTitle,
+      paramCatalogAuthor,
+      paramCatalogPublicationYear,
+      paramBookId,
+      paramUserId,
+      paramReservationId,
     },
     securitySchemes: {
       ApiTokenAuth: {

@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express'
-import { DatabaseService } from '@book-library-tool/database'
+import { DatabaseService, getPaginatedData } from '@book-library-tool/database'
 import {
   apiWallet,
   Book,
@@ -199,12 +199,15 @@ export const reservationHandler = {
       const reservationsCollection =
         DatabaseService.getCollection<Reservation>('reservations')
 
-      const history = await reservationsCollection
-        .find({ userId }, { projection: { _id: 0 } })
-        .sort({ reservedAt: -1 })
-        .toArray()
+      // Use the pagination helper to get paginated reservation history.
+      const paginatedHistory = await getPaginatedData<Reservation>(
+        reservationsCollection,
+        { userId },
+        req,
+        { projection: { _id: 0 }, sort: { reservedAt: -1 } },
+      )
 
-      res.status(200).json(history)
+      res.status(200).json(paginatedHistory)
     } catch (error) {
       next(error)
     }

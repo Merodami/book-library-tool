@@ -14,8 +14,13 @@ import cors from 'cors'
 import { randomUUID } from 'crypto'
 import { DatabaseService } from '@book-library-tool/database'
 import type { Book, Reservation, User } from '@book-library-tool/sdk'
-import { apiWallet } from '@book-library-tool/sdk'
-import { validateBody, validateParams, schemas } from '@book-library-tool/api'
+import { apiWallet, paginationMiddleware } from '@book-library-tool/sdk'
+import {
+  validateBody,
+  validateParams,
+  schemas,
+  validateQuery,
+} from '@book-library-tool/api'
 
 // Import your router or create a minimal version for testing
 import { reservationHandler } from './reservationHandler.js'
@@ -89,6 +94,8 @@ describe('Reservation Handler Integration Tests', () => {
       .get(
         '/reservations/user/:userId',
         validateParams(schemas.UserIdSchema),
+        validateQuery(schemas.ReservationsHistoryQuerySchema),
+        paginationMiddleware(),
         reservationHandler.getReservationHistory,
       )
       .patch(
@@ -267,10 +274,10 @@ describe('Reservation Handler Integration Tests', () => {
         .set(commonHeaders)
         .expect(200)
 
-      expect(response.body).toBeInstanceOf(Array)
-      expect(response.body.length).toBe(2)
-      expect(response.body[0].status).toBe('reserved') // Most recent first
-      expect(response.body[1].status).toBe('returned')
+      expect(response.body.data).toBeInstanceOf(Array)
+      expect(response.body.data.length).toBe(2)
+      expect(response.body.data[0].status).toBe('reserved') // Most recent first
+      expect(response.body.data[1].status).toBe('returned')
     })
 
     it('should return validation error for invalid userId format', async () => {

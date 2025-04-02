@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { reservationHandler } from './reservationHandler.js'
 import { DatabaseService } from '@book-library-tool/database'
+import { paginationHelper } from '@book-library-tool/database'
 import { apiWallet } from '@book-library-tool/sdk'
 import { ReservationStatus } from '@book-library-tool/types'
 import { ObjectId } from 'mongodb'
@@ -9,7 +10,8 @@ describe('reservationHandler', () => {
   let req: any, res: any, next: any
   let fakeBooksCollection: any,
     fakeUsersCollection: any,
-    fakeReservationsCollection: any
+    fakeReservationsCollection: any,
+    fakeGetPaginatedData: any
 
   beforeEach(() => {
     // Create fake collections with stubbed functions.
@@ -27,6 +29,7 @@ describe('reservationHandler', () => {
         toArray: vi.fn(),
       }),
     }
+    fakeGetPaginatedData = vi.spyOn(paginationHelper, 'getPaginatedData')
 
     // Stub DatabaseService.getCollection to return our fake collections based on name.
     vi.spyOn(DatabaseService, 'getCollection').mockImplementation(
@@ -38,7 +41,7 @@ describe('reservationHandler', () => {
     )
 
     // Reset request, response, next mocks.
-    req = { params: {}, body: {} }
+    req = { params: {}, body: {}, pagination: { page: 1, limit: 10 } }
     res = {
       status: vi.fn().mockReturnThis(),
       json: vi.fn(),
@@ -281,9 +284,12 @@ describe('reservationHandler', () => {
     })
 
     it('should return reservation history with 200', async () => {
-      req.params = { userId: '7a120e5a-5e3b-4b34-b15d-e136b6a377cf' }
+      const userId = '7a120e5a-5e3b-4b34-b15d-e136b6a377cf'
+
+      req.params = { userId }
+
       fakeUsersCollection.findOne.mockResolvedValue({
-        userId: '7a120e5a-5e3b-4b34-b15d-e136b6a377cf',
+        userId,
       })
 
       const fakeHistory = [
@@ -291,16 +297,17 @@ describe('reservationHandler', () => {
         { reservationId: 'res2', reservedAt: '2025-04-01T09:00:00.000Z' },
       ]
 
-      fakeReservationsCollection.find.mockReturnValue({
-        sort: vi.fn().mockReturnThis(),
-        toArray: vi.fn().mockResolvedValue(fakeHistory),
-      })
+      // Mock the getPaginatedData method
+      fakeGetPaginatedData.mockResolvedValue(fakeHistory)
 
       await reservationHandler.getReservationHistory(req, res, next)
 
-      expect(fakeReservationsCollection.find).toHaveBeenCalledWith(
-        { userId: '7a120e5a-5e3b-4b34-b15d-e136b6a377cf' },
-        { projection: { _id: 0 } },
+      // Verify if call to getPaginatedData was made with expected parameters
+      expect(fakeGetPaginatedData).toHaveBeenCalledWith(
+        fakeReservationsCollection,
+        { userId },
+        req,
+        { projection: { _id: 0 }, sort: { reservedAt: -1 } },
       )
       expect(res.status).toHaveBeenCalledWith(200)
       expect(res.json).toHaveBeenCalledWith(fakeHistory)

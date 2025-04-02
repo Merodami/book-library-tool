@@ -10,6 +10,7 @@ import { DatabaseService } from '@book-library-tool/database'
 import { bookHandler } from './bookHandler.js'
 import { catalogHandler } from '../catalog/catalogHandler.js'
 import { schemas, validateBody, validateParams } from '@book-library-tool/api'
+import { paginationMiddleware } from '@book-library-tool/sdk'
 
 describe('Book Service Integration Tests', () => {
   const db = setUpTestDatabase({ randomUUID })
@@ -58,7 +59,7 @@ describe('Book Service Integration Tests', () => {
     )
     // To validate if book created exists
 
-    app.get('/catalog', catalogHandler.searchCatalog)
+    app.get('/catalog', paginationMiddleware(), catalogHandler.searchCatalog)
   })
 
   // Clean the database between tests
@@ -203,9 +204,9 @@ describe('Book Service Integration Tests', () => {
         .set(commonHeaders)
         .expect(200)
 
-      expect(response.body).toBeInstanceOf(Array)
-      expect(response.body.length).toBe(2)
-      expect(response.body.map((b: any) => b.title)).toEqual(
+      expect(response.body.data).toBeInstanceOf(Array)
+      expect(response.body.data.length).toBe(2)
+      expect(response.body.data.map((b: any) => b.title)).toEqual(
         expect.arrayContaining(['The Target', 'Another Target']),
       )
     })
@@ -216,9 +217,9 @@ describe('Book Service Integration Tests', () => {
         .set(commonHeaders)
         .expect(200)
 
-      expect(response.body).toBeInstanceOf(Array)
-      expect(response.body.length).toBe(1)
-      expect(response.body[0].author).toBe('Catherine Coulter')
+      expect(response.body.data).toBeInstanceOf(Array)
+      expect(response.body.data.length).toBe(1)
+      expect(response.body.data[0].author).toBe('Catherine Coulter')
     })
 
     it('should search books by publication year', async () => {
@@ -227,9 +228,9 @@ describe('Book Service Integration Tests', () => {
         .set(commonHeaders)
         .expect(200)
 
-      expect(response.body).toBeInstanceOf(Array)
-      expect(response.body.length).toBe(2)
-      expect(response.body.map((b: any) => b.publicationYear)).toEqual([
+      expect(response.body.data).toBeInstanceOf(Array)
+      expect(response.body.data.length).toBe(2)
+      expect(response.body.data.map((b: any) => b.publicationYear)).toEqual([
         1999, 1999,
       ])
     })
@@ -240,8 +241,8 @@ describe('Book Service Integration Tests', () => {
         .set(commonHeaders)
         .expect(200)
 
-      expect(response.body).toBeInstanceOf(Array)
-      expect(response.body.length).toBe(0)
+      expect(response.body.data).toBeInstanceOf(Array)
+      expect(response.body.data.length).toBe(0)
     })
   })
 
