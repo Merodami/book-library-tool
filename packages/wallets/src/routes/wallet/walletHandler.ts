@@ -16,17 +16,10 @@ export const walletHandler = {
     try {
       const { userId } = req.params as UserId
 
-      if (!userId) {
-        res.status(400).json({ message: 'User ID is required.' })
-        return
-      }
-
       const walletCollection = DatabaseService.getCollection<Wallet>('wallets')
-      const wallet = await DatabaseService.findOne(
-        walletCollection,
-        { userId: userId.trim() },
-        { projection: { _id: 0 } },
-      )
+      const wallet = await DatabaseService.findOne(walletCollection, {
+        userId: userId.trim(),
+      })
 
       if (!wallet) {
         res.status(404).json({ message: 'Wallet not found.' })
