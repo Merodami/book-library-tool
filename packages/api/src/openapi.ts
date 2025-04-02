@@ -802,7 +802,6 @@ export const OpenAPISpec = {
       },
     },
     '/wallets/{userId}/late-return': {
-      'x-swagger-hidden': true,
       patch: {
         summary: 'Apply a late fee to a user wallet',
         parameters: [

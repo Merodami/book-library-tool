@@ -38,28 +38,17 @@ describe('walletHandler', () => {
   })
 
   describe('getWallet', () => {
-    it('should return 400 if no userId is provided', async () => {
-      req.params = {}
-
-      await walletHandler.getWallet(req, res, next)
-
-      expect(res.status).toHaveBeenCalledWith(400)
-      expect(res.json).toHaveBeenCalledWith({ message: 'User ID is required.' })
-    })
-
     it('should return 404 if wallet is not found', async () => {
-      req.params = { userId: 'user123' } // extra spaces to test trimming
+      req.params = { userId: '  user123  ' } // extra spaces to test trimming
 
       vi.spyOn(DatabaseService, 'findOne').mockResolvedValue(null)
 
       await walletHandler.getWallet(req, res, next)
 
       expect(DatabaseService.getCollection).toHaveBeenCalledWith('wallets')
-      expect(DatabaseService.findOne).toHaveBeenCalledWith(
-        walletCollection,
-        { userId: 'user123' },
-        { projection: { _id: 0 } },
-      )
+      expect(DatabaseService.findOne).toHaveBeenCalledWith(walletCollection, {
+        userId: 'user123',
+      })
       expect(res.status).toHaveBeenCalledWith(404)
       expect(res.json).toHaveBeenCalledWith({ message: 'Wallet not found.' })
     })

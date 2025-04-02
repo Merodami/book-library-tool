@@ -18,6 +18,7 @@
     "@types/he": "^1.2.3",
     "@types/lodash-es": "^4.17.12",
     "@types/mongodb": "^4.0.7",
+    "mongodb-memory-server": "^10.1.4",
     "typescript": "^5.8.2"
   }
 }

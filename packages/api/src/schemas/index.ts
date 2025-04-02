@@ -174,8 +174,8 @@ export type BalanceWalletRequest = Static<typeof BalanceWalletRequestSchema>
  */
 export const LateReturnRequestSchema = Type.Object(
   {
-    daysLate: Type.Number(),
-    retailPrice: Type.Number(),
+    daysLate: Type.Number({ minimum: 0 }),
+    retailPrice: Type.Number({ minimum: 0 }),
   },
   { $id: '#/components/schemas/LateReturnRequest' },
 )

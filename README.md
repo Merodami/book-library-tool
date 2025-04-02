@@ -290,7 +290,7 @@ auto-fixable issues and commits the changes.
 
 #### Unit tests
 
-Unit tests can be run with the following commands:
+Unit and integration tests can be run with the following commands:
 
 ```sh
 yarn test
